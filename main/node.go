@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/big"
+	"os"
 	"sync"
 )
 
@@ -27,7 +29,7 @@ type fingerItem struct {
 }
 
 type Node struct {
-	Name       string   // e.g. N-5
+	Name       string   // can be address or user-defined name which is given by the input args
 	Addr       string   // IP:Port
 	Identifier *big.Int //chord space identifier,0-63
 
@@ -35,9 +37,84 @@ type Node struct {
 	nextFinger  int //the index of the next finger, [0,m-1]
 
 	PredecessorAddr string
-	SuccessorsAddr  []string
+	//the size of successor list is given by the input argument
+	SuccessorsAddr []string
 
 	mutex sync.Mutex
+}
+
+// the first node in the chord, no predecessor, all the successors are the node itself
+func (node *Node) createNewChord() {
+	node.PredecessorAddr = ""
+	for i := 0; i < len(node.SuccessorsAddr); i++ {
+		node.SuccessorsAddr[i] = node.Addr
+	}
+}
+
+func NewNode(args Arguments) *Node {
+	//assign address to the new node
+	newNode := &Node{}
+	var nodeAddr string
+	if args.IpAddress == "127.0.0.1" || args.IpAddress == "localhost" {
+		nodeAddr = "127.0.0.1"
+	} else if args.IpAddress == "0.0.0.0" {
+		nodeAddr = getIP()
+	} else {
+		nodeAddr = getLocalAddress()
+	}
+	newNode.Addr = fmt.Sprintf("%s:%d", nodeAddr, args.Port)
+
+	//assign name to the new node
+	if args.ClientName == "Default" {
+		newNode.Name = newNode.Addr
+	} else {
+		newNode.Name = args.ClientName
+	}
+
+	newNode.Identifier = StrHash(newNode.Name)
+	newNode.Identifier.Mod(newNode.Identifier, hashMod)
+
+	newNode.FingerTable = make([]fingerItem, fingerTableLen+1)
+
+	//todo:store file and backup
+
+	newNode.PredecessorAddr = ""
+	newNode.SuccessorsAddr = make([]string, args.R)
+
+	//initiate id to n+2^(i-1), all addr to node.Addr
+	newNode.initFingerTable()
+	//initiate all to empty string
+	newNode.initSuccessorsAddr()
+
+	rootPath := "../files/" + newNode.Name
+	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
+		err := os.MkdirAll(rootPath, os.ModePerm)
+		if err != nil {
+			log.Println("failed to create file: " + rootPath + err.Error())
+		} else {
+
+			fileMode := []string{"/upload", "/download", "/chord"}
+			for _, mode := range fileMode {
+				//create upload/download/chord folder for a certain node
+				if _, err := os.Stat(rootPath + mode); os.IsNotExist(err) {
+					err := os.Mkdir(rootPath+mode, os.ModePerm)
+					if err != nil {
+						log.Println("failed to create file of: " + rootPath + mode + err.Error())
+					}
+				} else {
+					log.Println("the file of :" + rootPath + mode + " already exist")
+				}
+			}
+
+		}
+		//todo:generateRSAKey
+
+	} else {
+		fmt.Println("the node folder of" + rootPath + " already exist")
+		//todo:file operations
+	}
+
+	return newNode
 }
 
 // m rows
@@ -56,10 +133,9 @@ func (node *Node) initFingerTable() {
 	}
 }
 
-func (node *Node) createNewChord() {
-	node.PredecessorAddr = ""
-	for i := 0; i < len(node.SuccessorsAddr); i++ {
-		//todo: why set successor to address
-		node.SuccessorsAddr[i] = node.Addr
+func (node *Node) initSuccessorsAddr() {
+	successorsAddrNum := len(node.SuccessorsAddr)
+	for i := 0; i < successorsAddrNum; i++ {
+		node.SuccessorsAddr[i] = ""
 	}
 }
