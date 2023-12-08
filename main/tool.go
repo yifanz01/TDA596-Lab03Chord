@@ -126,5 +126,15 @@ func StrHash(elt string) *big.Int {
 
 func findFile(id *big.Int, startNode string) {
 	log.Println("--------------------invocation of find--------------------")
-	id.Mod(id)
+	id.Mod(id, hashMod)
+	flag := false
+
+}
+
+func between(start, elt, end *big.Int, inclusive bool) bool {
+	if end.Cmp(start) > 0 { // start < end
+		return (start.Cmp(elt) < 0 && elt.Cmp(end) < 0) || (inclusive && elt.Cmp(end) == 0)
+	} else {
+		return start.Cmp(elt) < 0 || elt.Cmp(end) < 0 || (inclusive && elt.Cmp(end) == 0)
+	}
 }
