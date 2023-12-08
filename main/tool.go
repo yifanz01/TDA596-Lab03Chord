@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/sha1"
 	"flag"
 	"log"
+	"math/big"
 	"net"
 	"regexp"
 )
@@ -102,15 +104,27 @@ func validArguments(args Arguments) int {
 				log.Println("Join port number is invalid")
 				return -1
 			}
-			// Join the chord
+			// Join the chord ring
 			return 0
 		} else {
 			log.Println("Joining address is invalid")
 			return -1
 		}
 	} else {
-		// Join address is not specified, create a new chord ring
-		// ignroe jp input
+		// Create a new chord ring
+		// ignore jp input
 		return 1
 	}
+}
+
+// hash file name to m-digits number
+func StrHash(elt string) *big.Int {
+	hasher := sha1.New()
+	hasher.Write([]byte(elt))
+	return new(big.Int).SetBytes(hasher.Sum(nil))
+}
+
+func findFile(id *big.Int, startNode string) {
+	log.Println("--------------------invocation of find--------------------")
+	id.Mod(id)
 }
