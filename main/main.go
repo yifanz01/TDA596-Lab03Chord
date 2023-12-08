@@ -81,12 +81,14 @@ func main() {
 				err = ChordCall(targetAddr, "Node.CheckFileExistRPC", key, &checkFileExistRPCReply)
 				if err != nil {
 					log.Println("Check file exist fail..", err)
+					continue
 				} else {
 					if checkFileExistRPCReply.Exist {
 						var getAddrRPCReply GetAddrRPCReply
 						err = ChordCall(targetAddr, "Node.GetAddrRPC", "", getAddrRPCReply)
 						if err != nil {
 							log.Println("Chord Call failed! ")
+							continue
 						} else {
 							log.Println("The file is stored at: ", targetAddr)
 						}
@@ -95,6 +97,15 @@ func main() {
 					}
 				}
 			} else if command == "STOREFILE" {
+				log.Println("Please enter the file you want to upload...")
+				fileName, _ := reader.ReadString('\n')
+				fileName = strings.TrimSpace(fileName)
+				err = StoreFile(fileName, node)
+				if err != nil {
+					log.Println(err)
+				} else {
+					log.Println("File storage success!")
+				}
 
 			} else if command == "PRINTSTATE" {
 

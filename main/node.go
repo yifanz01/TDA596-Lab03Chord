@@ -41,6 +41,16 @@ type Node struct {
 	SuccessorsAddr []string
 
 	mutex sync.Mutex
+
+	// Create bucket in form of map
+	Bucket map[*big.Int]string
+	Backup map[*big.Int]string
+}
+
+type StoreFileRPCReply struct {
+	Success bool
+	Err     error
+	Backup  bool
 }
 
 // the first node in the chord, no predecessor, all the successors are the node itself
