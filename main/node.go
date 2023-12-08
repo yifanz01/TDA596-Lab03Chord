@@ -54,6 +54,7 @@ func (node *Node) createNewChord() {
 func NewNode(args Arguments) *Node {
 	//assign address to the new node
 	newNode := &Node{}
+	fmt.Println("test")
 	var nodeAddr string
 	if args.IpAddress == "127.0.0.1" || args.IpAddress == "localhost" {
 		nodeAddr = "127.0.0.1"
