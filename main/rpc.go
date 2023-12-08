@@ -10,7 +10,7 @@ import (
 func ChordCall(targetNodeAddr string, serviceMethod string, args interface{}, reply interface{}) error {
 	if len(strings.Split(targetNodeAddr, ":")) != 2 {
 		log.Println("Node ip:port address error!", targetNodeAddr)
-		return errors.New("Error: targetNode address is not in the correct format: " + string(targetNodeAddr))
+		return errors.New("Error: targetNode address is not in the correct forma: " + string(targetNodeAddr))
 	}
 
 	conn, err := jsonrpc.Dial("tcp", targetNodeAddr)
