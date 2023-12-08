@@ -146,5 +146,19 @@ func (node *Node) joinChord(joinNodeAddr string) error {
 	log.Printf("Node %s wanna join the Chord: %s", node.Addr, joinNodeAddr)
 	node.PredecessorAddr = ""
 
+	//find the successor of node and store it in index-0
+	var reply FindSuccessorRPCReply
+	err := ChordCall(joinNodeAddr, "Node.FindSuccessorRPC", node.Identifier, &reply)
+	if err != nil {
+		return err
+	}
+	node.SuccessorsAddr[0] = reply.SuccessorAddress
+
+	//node is the predecessor of node.Successor
+	err = ChordCall(node.SuccessorsAddr[0], "Node.NotifyRPC", node.Addr, &reply)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

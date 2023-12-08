@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math/big"
 )
@@ -70,6 +71,16 @@ func (node *Node) GetAddrRPC(reply GetAddrRPCReply) {
 
 }
 
+type SetPredecessorRPCReply struct {
+	Success bool
+}
+
+func (node *Node) SetPredecessorRPC(predecessorAddr string, reply *SetPredecessorRPCReply) {
+	fmt.Println("-------------- Invoke SetPredecessorRPC function ------------")
+	node.PredecessorAddr = predecessorAddr
+	reply.Success = true
+}
+
 func (node *Node) LookupFingerTable(id *big.Int) string {
 	log.Println("--------------invocation of LookupFingerTable--------------")
 	size := len(node.FingerTable)
@@ -85,4 +96,25 @@ func (node *Node) LookupFingerTable(id *big.Int) string {
 		}
 	}
 	return node.SuccessorsAddr[0]
+}
+
+func (node *Node) PrintState() {
+	fmt.Println("-------------- Current Node State ------------")
+	fmt.Println("Node Name: ", node.Name)
+	fmt.Println("Node Address: ", node.Addr)
+	fmt.Println("Node Identifier: ", new(big.Int).SetBytes(node.Identifier.Bytes()))
+	fmt.Println("Node Predecessor: ", node.PredecessorAddr)
+	fmt.Println("Node Successors: ")
+	for i := 0; i < len(node.SuccessorsAddr); i++ {
+		fmt.Println("Successor ", i, " address: ", node.SuccessorsAddr[i])
+	}
+	fmt.Println("Node Finger Table: ")
+	for i := 1; i < fingerTableLen+1; i++ {
+		item := node.FingerTable[i]
+		id := new(big.Int).SetBytes(item.Identifier)
+		address := item.Addr
+		fmt.Println("Finger ", i, " id: ", id, ", address: ", address)
+		//todo:print bucket and backup
+
+	}
 }
