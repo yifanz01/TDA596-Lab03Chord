@@ -51,10 +51,10 @@ func (node *Node) createNewChord() {
 	}
 }
 
+// NewNode create a new node, and assign the initial values to it's attributes
 func NewNode(args Arguments) *Node {
 	//assign address to the new node
 	newNode := &Node{}
-	fmt.Println("test")
 	var nodeAddr string
 	if args.IpAddress == "127.0.0.1" || args.IpAddress == "localhost" {
 		nodeAddr = "127.0.0.1"
@@ -72,6 +72,7 @@ func NewNode(args Arguments) *Node {
 		newNode.Name = args.ClientName
 	}
 
+	//0-63
 	newNode.Identifier = StrHash(newNode.Name)
 	newNode.Identifier.Mod(newNode.Identifier, hashMod)
 
@@ -139,4 +140,11 @@ func (node *Node) initSuccessorsAddr() {
 	for i := 0; i < successorsAddrNum; i++ {
 		node.SuccessorsAddr[i] = ""
 	}
+}
+
+func (node *Node) joinChord(joinNodeAddr string) error {
+	log.Printf("Node %s wanna join the Chord: %s", node.Addr, joinNodeAddr)
+	node.PredecessorAddr = ""
+
+	return nil
 }

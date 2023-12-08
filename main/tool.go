@@ -2,10 +2,14 @@ package main
 
 import (
 	"crypto/sha1"
+	"encoding/json"
 	"flag"
+	"fmt"
+	"io"
 	"log"
 	"math/big"
 	"net"
+	"net/http"
 	"regexp"
 )
 
@@ -124,7 +128,45 @@ func StrHash(elt string) *big.Int {
 	return new(big.Int).SetBytes(hasher.Sum(nil))
 }
 
-func findFile(id *big.Int, startNode string) {
-	log.Println("--------------------invocation of find--------------------")
-	id.Mod(id)
+func between(start, elt, end *big.Int, inclusive bool) bool {
+	if end.Cmp(start) > 0 { // start < end
+		return (start.Cmp(elt) < 0 && elt.Cmp(end) < 0) || (inclusive && elt.Cmp(end) == 0)
+	} else {
+		return start.Cmp(elt) < 0 || elt.Cmp(end) < 0 || (inclusive && elt.Cmp(end) == 0)
+	}
+}
+
+type IP struct {
+	Query string
+}
+
+func getLocalAddress() string {
+	// get local ip address from dns server 8.8.8.8:80
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP.String()
+}
+
+func getIP() string {
+	req, err := http.Get("http://ip-api.com/json/")
+	if err != nil {
+		fmt.Println("could not get ip")
+		return err.Error()
+	}
+	defer req.Body.Close()
+
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		return err.Error()
+	}
+
+	var ip IP
+	fmt.Println("body: ", string(body))
+	json.Unmarshal(body, &ip)
+
+	return ip.Query
 }
