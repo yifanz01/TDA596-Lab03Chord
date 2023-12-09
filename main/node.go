@@ -165,10 +165,32 @@ func (node *Node) joinChord(joinNodeAddr string) error {
 	node.SuccessorsAddr[0] = reply.SuccessorAddress
 
 	//node is the predecessor of node.Successor
+	//communicate with node.Successor and notify it to modify the predecessor of node.SuccessorAddr[0] to node.Addr
 	err = ChordCall(node.SuccessorsAddr[0], "Node.NotifyRPC", node.Addr, &reply)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (node *Node) PrintState() {
+	fmt.Println("-------------- Current Node State ------------")
+	fmt.Println("Node Name: ", node.Name)
+	fmt.Println("Node Address: ", node.Addr)
+	fmt.Println("Node Identifier: ", new(big.Int).SetBytes(node.Identifier.Bytes()))
+	fmt.Println("Node Predecessor: ", node.PredecessorAddr)
+	fmt.Println("Node Successors: ")
+	for i := 0; i < len(node.SuccessorsAddr); i++ {
+		fmt.Println("Successor ", i, " address: ", node.SuccessorsAddr[i])
+	}
+	fmt.Println("Node Finger Table: ")
+	for i := 1; i < fingerTableLen+1; i++ {
+		item := node.FingerTable[i]
+		id := new(big.Int).SetBytes(item.Identifier)
+		address := item.Addr
+		fmt.Println("Finger ", i, " id: ", id, ", address: ", address)
+		//todo:print bucket and backup
+
+	}
 }

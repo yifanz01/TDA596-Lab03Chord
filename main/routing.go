@@ -9,6 +9,80 @@ import (
 	"os"
 )
 
+type GetIDRPCReply struct {
+	Identifier *big.Int
+}
+
+func (node *Node) GetIDRPC(none string, reply *GetIDRPCReply) error {
+	reply.Identifier = node.Identifier
+	return nil
+}
+
+type NotifyRPCReply struct {
+	Success bool
+}
+
+// change the predecessor of the node to addr
+func (node *Node) notify(addr string) (bool, error) {
+	if node.PredecessorAddr != "" {
+		var getPredecessorIDRPCRply GetIDRPCReply
+		err := ChordCall(node.PredecessorAddr, "Node.GetIDRPC", "", &getPredecessorIDRPCRply)
+		if err != nil {
+			log.Println("Failed to get the name of predecessor:", err)
+			return false, err
+		}
+		predecessorID := getPredecessorIDRPCRply.Identifier
+
+		var getAddrIDRPCRply GetIDRPCReply
+		err = ChordCall(addr, "Node.GetIDRPC", "", &getAddrIDRPCRply)
+		if err != nil {
+			log.Println("Failed to get the name of predecessor:", err)
+			return false, err
+		}
+		addrID := getAddrIDRPCRply.Identifier
+
+		if between(predecessorID, addrID, node.Identifier, false) {
+			node.PredecessorAddr = addr
+			log.Println(node.Name, "'s Predecessor is set to ", addr)
+			return true, nil
+		} else {
+			return false, nil
+		}
+	} else {
+		node.PredecessorAddr = addr
+		log.Println(node.Name, "'s Predecessor is set to ", addr)
+		return true, nil
+	}
+}
+
+func (node *Node) NotifyRPC(addr string, reply NotifyRPCReply) error {
+	//todo:move files
+	reply.Success, _ = node.notify(addr)
+	return nil
+}
+
+type GetSuccessorListRPCReply struct {
+	SuccessorList []string
+}
+
+func (node *Node) GetSuccessorListRPC(none *struct{}, reply *GetSuccessorListRPCReply) error {
+	reply.SuccessorList = node.SuccessorsAddr
+	return nil
+}
+
+type GetPredecessorRPCReply struct {
+	PredecessorAddr string
+}
+
+func (node *Node) GetPredecessorRPC(none *struct{}, reply *GetPredecessorRPCReply) error {
+	reply.PredecessorAddr = node.PredecessorAddr
+	if reply.PredecessorAddr == "" {
+		return errors.New("predecessor is empty")
+	} else {
+		return nil
+	}
+}
+
 type LookupReply struct {
 	Found         bool
 	SuccessorAddr string
@@ -99,27 +173,6 @@ func (node *Node) LookupFingerTable(id *big.Int) string {
 		}
 	}
 	return node.SuccessorsAddr[0]
-}
-
-func (node *Node) PrintState() {
-	fmt.Println("-------------- Current Node State ------------")
-	fmt.Println("Node Name: ", node.Name)
-	fmt.Println("Node Address: ", node.Addr)
-	fmt.Println("Node Identifier: ", new(big.Int).SetBytes(node.Identifier.Bytes()))
-	fmt.Println("Node Predecessor: ", node.PredecessorAddr)
-	fmt.Println("Node Successors: ")
-	for i := 0; i < len(node.SuccessorsAddr); i++ {
-		fmt.Println("Successor ", i, " address: ", node.SuccessorsAddr[i])
-	}
-	fmt.Println("Node Finger Table: ")
-	for i := 1; i < fingerTableLen+1; i++ {
-		item := node.FingerTable[i]
-		id := new(big.Int).SetBytes(item.Identifier)
-		address := item.Addr
-		fmt.Println("Finger ", i, " id: ", id, ", address: ", address)
-		//todo:print bucket and backup
-
-	}
 }
 
 type FileStructure struct {
