@@ -18,6 +18,21 @@ type ScheduledExecutor struct {
 	quit   chan int
 }
 
+func (s *ScheduledExecutor) Start(task func()) {
+	s.ticker = *time.NewTicker(s.delay)
+	go func() {
+		for {
+			select {
+			case <-s.ticker.C:
+				go task()
+			case <-s.quit:
+				s.ticker.Stop()
+				return
+			}
+		}
+	}()
+}
+
 func main() {
 	arguments := getComArgs()
 	log.Println("Arguments: ", arguments)
@@ -60,6 +75,30 @@ func main() {
 			// Create new chord
 			node.createChord()
 		}
+
+		executorStabilization := ScheduledExecutor{
+			delay: time.Duration(arguments.Ts) * time.Millisecond,
+			quit:  make(chan int),
+		}
+		executorStabilization.Start(func() {
+			node.stablize()
+		})
+
+		executorFixFinger := ScheduledExecutor{
+			delay: time.Duration(arguments.Tff) * time.Millisecond,
+			quit:  make(chan int),
+		}
+		executorFixFinger.Start(func() {
+			node.FixFingers()
+		})
+
+		executorCheckPredecessor := ScheduledExecutor{
+			delay: time.Duration(arguments.Tcp) * time.Millisecond,
+			quit:  make(chan int),
+		}
+		executorCheckPredecessor.Start(func() {
+			node.checkPredecessor()
+		})
 
 		// Read input from stdin
 		reader := bufio.NewReader(os.Stdin)
