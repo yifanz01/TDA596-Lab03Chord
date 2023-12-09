@@ -108,7 +108,7 @@ func main() {
 				}
 
 			} else if command == "PRINTSTATE" {
-
+				node.PrintState()
 			} else if command == "QUIT" {
 
 			}

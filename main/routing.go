@@ -93,7 +93,7 @@ func (node *Node) LookupFingerTable(id *big.Int) string {
 
 		fingerId := StrHash(getAddrRPCReply.Addr)
 		fingerId.Mod(fingerId, hashMod)
-		flag := between(node.Identifier, fingerId, id, true)
+		flag := between(node.Identifier, fingerId, id, false) // Todo, why is false. e.g. 42  (8, 54]
 		if flag {
 			return node.FingerTable[i].Addr
 		}
