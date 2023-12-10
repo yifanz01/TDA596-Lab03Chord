@@ -1,8 +1,12 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha1"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"io"
@@ -10,6 +14,7 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"os"
 	"regexp"
 )
 
@@ -149,6 +154,90 @@ func getLocalAddress() string {
 	defer conn.Close()
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 	return localAddr.IP.String()
+}
+
+func (node *Node) genRSAKey(bits int) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		log.Println("[genRSAKey] Failed to generate private key for node ", node.Name)
+	}
+	node.PrivateKey = privateKey
+	node.PublicKey = &privateKey.PublicKey
+
+	//store private key in the node folder
+	privateKeyDER := x509.MarshalPKCS1PrivateKey(privateKey)
+	block := pem.Block{Type: node.Name + "-private Key",
+		Headers: nil,
+		Bytes:   privateKeyDER}
+	nodeFolder := "../files/" + node.Name
+	privateKeyFile, err := os.Create(nodeFolder + "/private.pem")
+	if err != nil {
+		log.Println("[genRSAKey] Failed to create private key file for node ", node.Name)
+	}
+	defer privateKeyFile.Close()
+	err = pem.Encode(privateKeyFile, &block)
+	if err != nil {
+		log.Println("[genRSAKey] Failed to write private key into file")
+	}
+
+	//store public kay in the node folder
+	publicKeyDER, err := x509.MarshalPKIXPublicKey(node.PublicKey)
+	if err != nil {
+		log.Println("[genRSAKey] Failed to get DER format of public key for node ", node.Name)
+	}
+	block = pem.Block{
+		Type:    node.Name + "-private Key",
+		Headers: nil,
+		Bytes:   publicKeyDER,
+	}
+	publicKeyFile, err := os.Create(nodeFolder + "public.pem")
+	if err != nil {
+		log.Println("[genRSAKey] Failed to create public key file for node ", node.Name)
+	}
+	defer publicKeyFile.Close()
+	err = pem.Encode(publicKeyFile, &block)
+	if err != nil {
+		log.Println("[genRSAKey] Failed to write public key into file")
+	}
+}
+
+func NAT(addr string) string {
+	/*
+	* NAT: ip is internal ip, need to be changed to external ip
+	 */
+	new_addr := addr
+	getLocalAddress_res := getLocalAddress()
+	// fmt.Println("getLocalAddress_res: ", getLocalAddress_res)
+	// fmt.Println("Input addr: ", addr)
+	if addr == getLocalAddress_res {
+		new_addr = "localhost"
+	}
+
+	// wwq's NAT
+	if addr == "172.31.21.112" {
+		new_addr = "54.145.27.145"
+	}
+
+	// cfz's NAT
+	if addr == "192.168.31.236" {
+		new_addr = "95.80.36.91"
+	}
+
+	// jetson's NAT
+	if addr == "192.168.31.153" {
+		new_addr = "95.80.36.91"
+	}
+	// qi's laptop NAT
+	if addr == "192.168.254.89" {
+		new_addr = "50.93.222.140"
+	}
+
+	// qi's AWS NAT
+	if addr == "172.31.82.96" {
+		new_addr = "18.233.168.46"
+	}
+
+	return new_addr
 }
 
 func getIP() string {

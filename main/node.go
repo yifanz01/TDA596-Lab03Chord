@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"log"
 	"math/big"
@@ -42,7 +43,12 @@ type Node struct {
 
 	mutex sync.Mutex
 
-	// Create bucket in form of map
+	//file encryption
+	PrivateKey  *rsa.PrivateKey
+	PublicKey   *rsa.PublicKey
+	EncryptFlag bool
+
+	//For fault tolerance
 	Bucket map[*big.Int]string
 	Backup map[*big.Int]string
 }
@@ -87,8 +93,8 @@ func NewNode(args Arguments) *Node {
 	newNode.Identifier.Mod(newNode.Identifier, hashMod)
 
 	newNode.FingerTable = make([]fingerItem, fingerTableLen+1)
-
-	//todo:store file and backup
+	//todo:not sure about the initial value
+	newNode.nextFinger = 0
 
 	newNode.PredecessorAddr = ""
 	newNode.SuccessorsAddr = make([]string, args.R)
@@ -97,6 +103,11 @@ func NewNode(args Arguments) *Node {
 	newNode.initFingerTable()
 	//initiate all to empty string
 	newNode.initSuccessorsAddr()
+
+	newNode.EncryptFlag = true
+
+	newNode.Bucket = make(map[*big.Int]string)
+	newNode.Backup = make(map[*big.Int]string)
 
 	rootPath := "../files/" + newNode.Name
 	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
@@ -119,8 +130,7 @@ func NewNode(args Arguments) *Node {
 			}
 
 		}
-		//todo:generateRSAKey
-
+		newNode.genRSAKey(2048)
 	} else {
 		fmt.Println("the node folder of" + rootPath + " already exist")
 		//todo:file operations
