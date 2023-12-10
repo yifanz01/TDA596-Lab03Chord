@@ -82,14 +82,14 @@ func NewNode(args Arguments) *Node {
 	newNode.Addr = fmt.Sprintf("%s:%d", nodeAddr, args.Port)
 
 	//assign name to the new node
-	if args.ClientName == "Default" {
+	if args.ClientName == "default" {
 		newNode.Name = newNode.Addr
 	} else {
 		newNode.Name = args.ClientName
 	}
 
 	//0-63
-	newNode.Identifier = StrHash(newNode.Name)
+	newNode.Identifier = StrHash(newNode.Addr)
 	newNode.Identifier.Mod(newNode.Identifier, hashMod)
 
 	newNode.FingerTable = make([]fingerItem, fingerTableLen+1)
@@ -109,7 +109,7 @@ func NewNode(args Arguments) *Node {
 	newNode.Bucket = make(map[*big.Int]string)
 	newNode.Backup = make(map[*big.Int]string)
 
-	rootPath := "../files/" + newNode.Name
+	rootPath := "../files/" + "N" + newNode.Identifier.String()
 	//if the file did not exist
 	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
 		err := os.MkdirAll(rootPath, os.ModePerm)

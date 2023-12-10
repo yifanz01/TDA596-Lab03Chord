@@ -25,21 +25,21 @@ type NotifyRPCReply struct {
 // change the predecessor of the node to addr
 func (node *Node) notify(addr string) (bool, error) {
 	if node.PredecessorAddr != "" {
-		var getPredecessorIDRPCRply GetIDRPCReply
-		err := ChordCall(node.PredecessorAddr, "Node.GetIDRPC", "", &getPredecessorIDRPCRply)
+		var getPredecessorIDRPCReply GetIDRPCReply
+		err := ChordCall(node.PredecessorAddr, "Node.GetIDRPC", "", &getPredecessorIDRPCReply)
 		if err != nil {
 			log.Println("Failed to get the name of predecessor:", err)
 			return false, err
 		}
-		predecessorID := getPredecessorIDRPCRply.Identifier
+		predecessorID := getPredecessorIDRPCReply.Identifier
 
-		var getAddrIDRPCRply GetIDRPCReply
-		err = ChordCall(addr, "Node.GetIDRPC", "", &getAddrIDRPCRply)
+		var getAddrIDRPCReply GetIDRPCReply
+		err = ChordCall(addr, "Node.GetIDRPC", "", &getAddrIDRPCReply)
 		if err != nil {
 			log.Println("Failed to get the name of predecessor:", err)
 			return false, err
 		}
-		addrID := getAddrIDRPCRply.Identifier
+		addrID := getAddrIDRPCReply.Identifier
 
 		if between(predecessorID, addrID, node.Identifier, false) {
 			node.PredecessorAddr = addr
@@ -55,7 +55,7 @@ func (node *Node) notify(addr string) (bool, error) {
 	}
 }
 
-func (node *Node) NotifyRPC(addr string, reply NotifyRPCReply) error {
+func (node *Node) NotifyRPC(addr string, reply *NotifyRPCReply) error {
 	//todo:move files
 	reply.Success, _ = node.notify(addr)
 	return nil
@@ -89,18 +89,18 @@ type LookupReply struct {
 }
 
 func Lookup(id *big.Int, startNode string) string {
-	log.Println("---------------Invocation of Lookup start------------------")
+	//log.Println("---------------Invocation of Lookup start------------------")
 	id.Mod(id, hashMod)
 	next := startNode
 	flag := false
-	reply := LookupReply{}
+	result := FindSuccessorRPCReply{}
 	if !flag {
-		err := ChordCall(next, "Node.FindSuccessorRPC", id, &reply)
+		err := ChordCall(next, "Node.FindSuccessorRPC", id, &result)
 		if err != nil {
 			log.Printf("[Lookup] Find successor rpc error: %s\n", err)
 		}
-		flag = reply.Found
-		next = reply.SuccessorAddr
+		flag = result.Found
+		next = result.SuccessorAddress
 	}
 	return next
 }
@@ -118,11 +118,11 @@ type GetAddrRPCReply struct {
 	Addr string
 }
 
-func (node *Node) FindSuccessorRPC(id *big.Int, reply *FindSuccessorRPCReply) {
-	log.Println("---------------invocation of FindSuccessor----------------")
+func (node *Node) FindSuccessorRPC(id *big.Int, reply *FindSuccessorRPCReply) error {
+	//log.Println("---------------invocation of FindSuccessor----------------")
 	var successorAddr string
 	getAddrRPCReply := GetAddrRPCReply{}
-	err := ChordCall(node.SuccessorsAddr[0], "Node.GetAddrRPC", "", getAddrRPCReply)
+	err := ChordCall(node.SuccessorsAddr[0], "Node.GetAddrRPC", "", &getAddrRPCReply)
 	if err != nil {
 		log.Printf("[FindSuccessorRPC] Get AddrRPC error: %s\n", err)
 	}
@@ -150,25 +150,27 @@ func (node *Node) FindSuccessorRPC(id *big.Int, reply *FindSuccessorRPCReply) {
 		reply.Found = findSuccessorRPCReply.Found
 		reply.SuccessorAddress = findSuccessorRPCReply.SuccessorAddress
 	}
+	return nil
 }
 
-func (node *Node) GetAddrRPC(reply GetAddrRPCReply) {
-	reply.Addr = node.Name
-
+func (node *Node) GetAddrRPC(none string, reply *GetAddrRPCReply) error {
+	reply.Addr = node.Addr
+	return nil
 }
 
 type SetPredecessorRPCReply struct {
 	Success bool
 }
 
-func (node *Node) SetPredecessorRPC(predecessorAddr string, reply *SetPredecessorRPCReply) {
-	fmt.Println("-------------- Invoke SetPredecessorRPC function ------------")
+func (node *Node) SetPredecessorRPC(predecessorAddr string, reply *SetPredecessorRPCReply) error {
+	//fmt.Println("-------------- Invoke SetPredecessorRPC function ------------")
 	node.PredecessorAddr = predecessorAddr
 	reply.Success = true
+	return nil
 }
 
 func (node *Node) LookupFingerTable(id *big.Int) string {
-	log.Println("--------------invocation of LookupFingerTable--------------")
+	//log.Println("--------------invocation of LookupFingerTable--------------")
 	size := len(node.FingerTable)
 	for i := size - 1; i >= 1; i-- {
 		getAddrRPCReply := GetAddrRPCReply{}
@@ -198,7 +200,7 @@ func StoreFile(fileName string, node *Node) error {
 	key := StrHash(fileName)
 	addr := Lookup(key, node.Addr)
 	// read the file and upload it to addr
-	filePath := "../files/" + node.Name + "/upload/"
+	filePath := "../files/" + "N" + node.Identifier.String() + "/upload/"
 	filePath += fileName
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -227,7 +229,7 @@ func StoreFile(fileName string, node *Node) error {
 }
 
 func (node *Node) StoreFileRPC(f FileStructure, reply *StoreFileRPCReply) error {
-	log.Println("-----------------invocation of StoreFileRPC start------------------")
+	//log.Println("-----------------invocation of StoreFileRPC start------------------")
 
 	flag := node.storeFile(f, reply.Backup)
 	reply.Success = flag
@@ -266,7 +268,7 @@ func (node *Node) storeFile(f FileStructure, backUp bool) bool {
 		fmt.Println("Store Bucket: ", node.Bucket)
 	}
 
-	filePath := "../files/" + node.Name + "/chord_storage/" + f.Name
+	filePath := "../files/" + "N" + node.Identifier.String() + "/chord_storage/" + f.Name
 
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -288,7 +290,7 @@ type CheckFileExistRPCReply struct {
 }
 
 func (node *Node) CheckFileExistRPC(fileName string, reply *CheckFileExistRPCReply) error {
-	log.Println("----------------invocation of checkfileexistRPC---------------")
+	//log.Println("----------------invocation of checkfileexistRPC---------------")
 	for _, value := range node.Bucket {
 		if fileName == value {
 			reply.Exist = true
@@ -335,7 +337,7 @@ func (node *Node) SuccessorStoreFileRPC(f FileStructure, reply *SuccessorStoreFi
 func (node *Node) successorStoreFile(f FileStructure) bool {
 	f.Id.Mod(f.Id, hashMod)
 	node.Backup[f.Id] = f.Name
-	filePath := "../files/" + node.Name + "/chord_storage/" + f.Name
+	filePath := "../files/" + "N" + node.Identifier.String() + "/chord_storage/" + f.Name
 	file, err := os.Create(filePath)
 	if err != nil {
 		log.Println("[successorStoreFile] Create file error: ", err)

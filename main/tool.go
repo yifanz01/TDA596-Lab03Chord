@@ -51,6 +51,7 @@ func getComArgs() Arguments {
 	flag.IntVar(&tcp, "tcp", 100, "The time in milliseconds between invocations of check_predecessor")
 	flag.IntVar(&r, "r", 3, "The number of successors to maintain")
 	flag.StringVar(&i, "i", "default", "Client name")
+	flag.Parse()
 
 	return Arguments{
 		IpAddress:   a,
@@ -96,7 +97,7 @@ func validArguments(args Arguments) int {
 	}
 
 	// Check if client name is s a valid string matching the regular expression [0-9a-fA-F]{40}
-	if args.ClientName != "Default" {
+	if args.ClientName != "default" {
 		matched, err := regexp.MatchString("[0-9a-fA-F]*", args.ClientName)
 		if err != nil || !matched {
 			log.Println("Client Name is invalid")
@@ -159,20 +160,20 @@ func getLocalAddress() string {
 func (node *Node) genRSAKey(bits int) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
-		log.Println("[genRSAKey] Failed to generate private key for node ", node.Name)
+		log.Println("[genRSAKey] Failed to generate private key for node ", node.Name, "N"+node.Identifier.String())
 	}
 	node.PrivateKey = privateKey
 	node.PublicKey = &privateKey.PublicKey
 
 	//store private key in the node folder
 	privateKeyDER := x509.MarshalPKCS1PrivateKey(privateKey)
-	block := pem.Block{Type: node.Name + "-private Key",
+	block := pem.Block{Type: "N" + node.Identifier.String() + "-private Key",
 		Headers: nil,
 		Bytes:   privateKeyDER}
-	nodeFolder := "../files/" + node.Name
+	nodeFolder := "../files/" + "N" + node.Identifier.String()
 	privateKeyFile, err := os.Create(nodeFolder + "/private.pem")
 	if err != nil {
-		log.Println("[genRSAKey] Failed to create private key file for node ", node.Name)
+		log.Println("[genRSAKey] Failed to create private key file for node ", node.Name, "N"+node.Identifier.String())
 	}
 	defer privateKeyFile.Close()
 	err = pem.Encode(privateKeyFile, &block)
@@ -186,11 +187,11 @@ func (node *Node) genRSAKey(bits int) {
 		log.Println("[genRSAKey] Failed to get DER format of public key for node ", node.Name)
 	}
 	block = pem.Block{
-		Type:    node.Name + "-private Key",
+		Type:    "N" + node.Identifier.String() + "-public Key",
 		Headers: nil,
 		Bytes:   publicKeyDER,
 	}
-	publicKeyFile, err := os.Create(nodeFolder + "public.pem")
+	publicKeyFile, err := os.Create(nodeFolder + "/public.pem")
 	if err != nil {
 		log.Println("[genRSAKey] Failed to create public key file for node ", node.Name)
 	}

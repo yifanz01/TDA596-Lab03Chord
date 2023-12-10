@@ -41,6 +41,7 @@ func (node *Node) stabilize() error {
 		}
 	}
 
+	//change the active node's successor to the successor[0]'s predecessor
 	//find the predecessor of the node's successor
 	var getPredecessorRPCReply GetPredecessorRPCReply
 	err = ChordCall(node.SuccessorsAddr[0], "Node.GetPredecessorRPC", struct{}{}, &getPredecessorRPCReply)
@@ -57,7 +58,7 @@ func (node *Node) stabilize() error {
 
 		predecessorAddr := getPredecessorRPCReply.PredecessorAddr
 		var getPredecessorIDRPCReply GetIDRPCReply
-		err = ChordCall(predecessorAddr, "Node.GETIDRPC", "", &getPredecessorIDRPCReply)
+		err = ChordCall(predecessorAddr, "Node.GetIDRPC", "", &getPredecessorIDRPCReply)
 		if err != nil {
 			log.Println("Failed to get predecessor id")
 			return err
@@ -89,7 +90,7 @@ func (node *Node) stabilize() error {
 		newFile := FileStructure{}
 		newFile.Id = key
 		newFile.Name = value
-		filePath := "../files/" + node.Name + "/chord_storage/" + value
+		filePath := "../files/" + "N" + node.Identifier.String() + "/chord_storage/" + value
 		file, err := os.Open(filePath)
 		if err != nil {
 			log.Println("Open node's bucket file error: ", err)
@@ -118,7 +119,7 @@ func (node *Node) stabilize() error {
 
 func (node *Node) cleanRedundantFile() {
 	// Read all local storage files
-	filePath := "../files/" + node.Name + "/chord_storage"
+	filePath := "../files/" + "N" + node.Identifier.String() + "/chord_storage"
 	files, err := os.ReadDir(filePath)
 	if err != nil {
 		log.Println("[cleanRedundantFile] Read directory error: ", err)
@@ -163,16 +164,19 @@ func (node *Node) FingerStart(nodeId int) *big.Int {
 	return new(big.Int).Mod(id, hashMod)
 }
 
+// FixFingers updates finger table
 func (node *Node) FixFingers() error {
-	log.Println("--------------invocation of fixfingers function------------")
 
 	node.nextFinger += 1
 	if node.nextFinger > m {
 		node.nextFinger = 1
 	}
 	// n + 2^next-1, this key is a file id
+	//todo:why not using node.FingerTable[node.nextFinger].Identifier
+	//
 	key := new(big.Int).Add(node.Identifier, new(big.Int).Exp(big.NewInt(2), big.NewInt(int64(node.nextFinger)-1), nil))
 	key.Mod(key, hashMod)
+
 	// find the successor of the key
 	next := Lookup(key, node.Addr)
 
