@@ -266,7 +266,7 @@ func (node *Node) storeFile(f FileStructure, backUp bool) bool {
 		fmt.Println("Store Bucket: ", node.Bucket)
 	}
 
-	filePath := "../files/" + node.Name + "/storage/" + f.Name
+	filePath := "../files/" + node.Name + "/chord_storage/" + f.Name
 
 	file, err := os.Create(filePath)
 	if err != nil {
