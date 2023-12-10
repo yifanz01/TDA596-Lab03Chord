@@ -336,6 +336,16 @@ func (node *Node) SuccessorStoreFileRPC(f FileStructure, reply *SuccessorStoreFi
 
 func (node *Node) successorStoreFile(f FileStructure) bool {
 	f.Id.Mod(f.Id, hashMod)
+	for k, _ := range node.Backup {
+		if k.Cmp(f.Id) == 0 {
+			return true
+		}
+	}
+	for k, _ := range node.Bucket {
+		if k.Cmp(f.Id) == 0 {
+			return true
+		}
+	}
 	node.Backup[f.Id] = f.Name
 	filePath := "../files/" + "N" + node.Identifier.String() + "/chord_storage/" + f.Name
 	file, err := os.Create(filePath)
