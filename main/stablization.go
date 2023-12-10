@@ -1,11 +1,13 @@
 package main
 
 import (
+	"io"
 	"log"
 	"math/big"
+	"os"
 )
 
-func (node *Node) stablize() error {
+func (node *Node) stabilize() error {
 	//firstly, update successor list
 	//the successor list of node: successor[0] is the next server node that near active node
 	//1-(n-1) are the first (n-1) items of the successor list of successor[0]
@@ -66,8 +68,85 @@ func (node *Node) stablize() error {
 	//notify
 	ChordCall(node.SuccessorsAddr[0], "Node.NotifyRPC", node.Addr, &NotifyRPCReply{})
 	//todo:copy node bucket
+	// 1. First delete successor's backup
+	// 2. Copy current bucket to successor's backup(do not do it if there is one node left)
+	deleteSuccessorBackupRPCReply := DeleteSuccessorBackupRPCReply{}
+	err = ChordCall(node.SuccessorsAddr[0], "Node.DeleteSuccessorBackupRPC", struct{}{}, &deleteSuccessorBackupRPCReply)
+	if err != nil {
+		log.Println("Delete successor's backup error: ", err)
+		return err
+	}
 
+	if node.SuccessorsAddr[0] == node.Addr {
+		return nil
+	}
+	for key, value := range node.Bucket {
+		newFile := FileStructure{}
+		newFile.Id = key
+		newFile.Name = value
+		filePath := "../files/" + node.Name + "/chord_storage/" + value
+		file, err := os.Open(filePath)
+		if err != nil {
+			log.Println("Open node's bucket file error: ", err)
+			return err
+		}
+		defer file.Close()
+		content, err := io.ReadAll(file)
+		if err != nil {
+			log.Println("Read node's bucket file error: ", err)
+			return err
+		}
+		newFile.Content = content
+		successorStoreFileReply := SuccessorStoreFileRPCReply{}
+		err = ChordCall(node.SuccessorsAddr[0], "Node.SuccessorStoreFileRPC", newFile, &successorStoreFileReply)
+		if successorStoreFileReply.Error != nil || err != nil {
+			log.Println("[stabilize] Store files to successor error: ", successorStoreFileReply.Error, " and: ", err)
+			return nil
+		}
+
+	}
+	// Clean the redundant file in successor's backup
+	node.cleanRedundantFile()
 	return nil
+}
+
+func (node *Node) cleanRedundantFile() {
+	// Read all local storage files
+	filePath := "../files/" + node.Name + "/chord_storage"
+	files, err := os.ReadDir(filePath)
+	if err != nil {
+		log.Println("[cleanRedundantFile] Read directory error: ", err)
+		return
+	}
+	for _, file := range files {
+		fileName := file.Name()
+		fileId := StrHash(fileName)
+		fileId.Mod(fileId, hashMod)
+
+		inBucket := false
+		inBackup := false
+		for id, _ := range node.Bucket {
+			if id.Cmp(fileId) == 0 {
+				inBucket = true
+			}
+		}
+
+		for id, _ := range node.Backup {
+			if id.Cmp(fileId) == 0 {
+				inBackup = true
+			}
+		}
+
+		if !inBackup && !inBucket {
+			// The file is not in backup and bucket, delete it
+			path := filePath + fileName
+			err = os.Remove(path)
+			if err != nil {
+				log.Printf("[cleanRedundantFile] Cannot remove the file[%s]\n: ", path)
+				return
+			}
+		}
+	}
 }
 
 // input the identifier of the node, 0-63

@@ -270,3 +270,71 @@ func (node *Node) storeFile(f FileStructure, backUp bool) bool {
 	}
 	return true
 }
+
+type CheckFileExistRPCReply struct {
+	Exist bool
+}
+
+func (node *Node) CheckFileExistRPC(fileName string, reply *CheckFileExistRPCReply) error {
+	log.Println("----------------invocation of checkfileexistRPC---------------")
+	for _, value := range node.Bucket {
+		if fileName == value {
+			reply.Exist = true
+			return nil
+		}
+	}
+	reply.Exist = false
+	return nil
+}
+
+type DeleteSuccessorBackupRPCReply struct {
+	Success bool
+}
+
+func (node *Node) DeleteSuccessorBackupRPC(args interface{}, reply *DeleteSuccessorBackupRPCReply) error {
+	reply.Success = node.deleteSuccessorBackupRPC()
+	return nil
+}
+
+func (node *Node) deleteSuccessorBackupRPC() bool {
+	for key, _ := range node.Backup {
+		// we just remove the reference to the key, but the file still exists in local disk. It will be cleaned later
+		delete(node.Backup, key)
+	}
+	return true
+}
+
+type SuccessorStoreFileRPCReply struct {
+	Successor bool
+	Error     error
+}
+
+func (node *Node) SuccessorStoreFileRPC(f FileStructure, reply *SuccessorStoreFileRPCReply) error {
+	reply.Successor = node.successorStoreFile(f)
+	if !reply.Successor {
+		reply.Error = errors.New("SuccessorStoreFileRPC error!")
+		return reply.Error
+	} else {
+		reply.Error = nil
+		return nil
+	}
+}
+
+func (node *Node) successorStoreFile(f FileStructure) bool {
+	f.Id.Mod(f.Id, hashMod)
+	node.Backup[f.Id] = f.Name
+	filePath := "../files/" + node.Name + "/chord_storage/" + f.Name
+	file, err := os.Create(filePath)
+	if err != nil {
+		log.Println("[successorStoreFile] Create file error: ", err)
+		return false
+	}
+	defer file.Close()
+	_, err = file.Write(f.Content)
+	if err != nil {
+		log.Println("[successorStoreFile] File write error: ", err)
+		return false
+	}
+	log.Printf("[successorStoreFile] File:%s store success!\n", f.Name)
+	return true
+}

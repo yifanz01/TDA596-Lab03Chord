@@ -39,7 +39,7 @@ func main() {
 
 	flag := validArguments(arguments)
 	if flag == -1 {
-		log.Println("Arguments are invalid!")
+		log.Println("[main] Arguments are invalid!")
 		os.Exit(1)
 	} else {
 		node := NewNode(arguments)
@@ -73,7 +73,7 @@ func main() {
 			node.joinChord(remoteAddress)
 		} else if flag == 1 {
 			// Create new chord
-			node.createChord()
+			node.createNewChord()
 		}
 
 		executorStabilization := ScheduledExecutor{
@@ -81,7 +81,7 @@ func main() {
 			quit:  make(chan int),
 		}
 		executorStabilization.Start(func() {
-			node.stablize()
+			node.stabilize()
 		})
 
 		executorFixFinger := ScheduledExecutor{
@@ -103,7 +103,7 @@ func main() {
 		// Read input from stdin
 		reader := bufio.NewReader(os.Stdin)
 		for {
-			log.Println("Please enter your command(Lookup/StoreFile/PrintState)...")
+			log.Println("Please enter your command(Lookup/StoreFile/PrintState/Quit)...")
 			command, _ := reader.ReadString('\n')
 			command = strings.ToUpper(strings.TrimSpace(command))
 			if command == "Lookup" {
@@ -149,7 +149,12 @@ func main() {
 			} else if command == "PRINTSTATE" {
 				node.PrintState()
 			} else if command == "QUIT" {
-
+				executorStabilization.quit <- 1
+				executorFixFinger.quit <- 1
+				executorCheckPredecessor.quit <- 1
+				os.Exit(0)
+			} else {
+				log.Println("Invalid command! Please enter your command again(Lookup/StoreFile/PrintState/Quit)...")
 			}
 		}
 	}
