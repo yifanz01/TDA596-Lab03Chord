@@ -95,7 +95,10 @@ func Lookup(id *big.Int, startNode string) string {
 	flag := false
 	reply := LookupReply{}
 	if !flag {
-		ChordCall(next, "Node.FindSuccessorRPC", id, &reply)
+		err := ChordCall(next, "Node.FindSuccessorRPC", id, &reply)
+		if err != nil {
+			log.Printf("[Lookup] Find successor rpc error: %s\n", err)
+		}
 		flag = reply.Found
 		next = reply.SuccessorAddr
 	}
@@ -119,7 +122,10 @@ func (node *Node) FindSuccessorRPC(id *big.Int, reply *FindSuccessorRPCReply) {
 	log.Println("---------------invocation of FindSuccessor----------------")
 	var successorAddr string
 	getAddrRPCReply := GetAddrRPCReply{}
-	ChordCall(node.SuccessorsAddr[0], "Node.GetAddrRPC", "", getAddrRPCReply)
+	err := ChordCall(node.SuccessorsAddr[0], "Node.GetAddrRPC", "", getAddrRPCReply)
+	if err != nil {
+		log.Printf("[FindSuccessorRPC] Get AddrRPC error: %s\n", err)
+	}
 
 	successorAddr = getAddrRPCReply.Addr
 	successorId := StrHash(successorAddr)
@@ -137,7 +143,10 @@ func (node *Node) FindSuccessorRPC(id *big.Int, reply *FindSuccessorRPCReply) {
 		// find the successor from fingertable
 		successorAddr = node.LookupFingerTable(id)
 		findSuccessorRPCReply := FindSuccessorRPCReply{}
-		ChordCall(successorAddr, "Node.FindSuccessorRPC", id, &findSuccessorRPCReply)
+		err = ChordCall(successorAddr, "Node.FindSuccessorRPC", id, &findSuccessorRPCReply)
+		if err != nil {
+			log.Printf("[FindSuccessorRPC] Find successor rpc error: %s", err)
+		}
 		reply.Found = findSuccessorRPCReply.Found
 		reply.SuccessorAddress = findSuccessorRPCReply.SuccessorAddress
 	}
@@ -163,7 +172,10 @@ func (node *Node) LookupFingerTable(id *big.Int) string {
 	size := len(node.FingerTable)
 	for i := size - 1; i >= 1; i-- {
 		getAddrRPCReply := GetAddrRPCReply{}
-		ChordCall(node.FingerTable[i].Addr, "Node.GetAddrRPC", "", &getAddrRPCReply)
+		err := ChordCall(node.FingerTable[i].Addr, "Node.GetAddrRPC", "", &getAddrRPCReply)
+		if err != nil {
+			log.Printf("[LookupFingerTable] Get addrRPC error: %s\n", err)
+		}
 
 		fingerId := StrHash(getAddrRPCReply.Addr)
 		fingerId.Mod(fingerId, hashMod)

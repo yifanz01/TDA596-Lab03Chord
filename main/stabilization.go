@@ -69,8 +69,10 @@ func (node *Node) stabilize() error {
 
 	}
 	//notify
-	ChordCall(node.SuccessorsAddr[0], "Node.NotifyRPC", node.Addr, &NotifyRPCReply{})
-	//todo:copy node bucket
+	err = ChordCall(node.SuccessorsAddr[0], "Node.NotifyRPC", node.Addr, &NotifyRPCReply{})
+	if err != nil {
+		log.Printf("[stabilize] Notify rpc error: %s\n", err)
+	}
 	// 1. First delete successor's backup
 	// 2. Copy current bucket to successor's backup(do not do it if there is one node left)
 	deleteSuccessorBackupRPCReply := DeleteSuccessorBackupRPCReply{}
