@@ -218,7 +218,11 @@ func StoreFile(fileName string, node *Node) error {
 	newFile.Id.Mod(newFile.Id, hashMod)
 	newFile.Content = content
 
-	// Todo encrypt file content
+	// Todo 1 encrypt file content
+	// Todo 2 store success print twice
+	// Todo 3 first node no predecessor error
+	// Todo 4 why keep logging RPC dial time out / optimise updating finger table
+	// Todo 5 check predecessor failed
 
 	// send storefile rpc
 	reply := StoreFileRPCReply{}

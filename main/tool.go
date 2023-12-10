@@ -202,6 +202,30 @@ func (node *Node) genRSAKey(bits int) {
 	}
 }
 
+// Encrypt file
+func (node *Node) EncryptFile(content []byte) []byte {
+	publicKey := node.PublicKey
+	encryptedContent, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey, content)
+	if err != nil {
+		fmt.Println("Encrypt file failed")
+		return nil
+	}
+	// Return the encrypted file
+	return encryptedContent
+}
+
+// DecryptFile Decrypt file
+func (node *Node) DecryptFile(content []byte) []byte {
+	privateKey := node.PrivateKey
+	decryptedContent, err := rsa.DecryptPKCS1v15(rand.Reader, privateKey, content)
+	if err != nil {
+		fmt.Println("Decrypt file failed")
+		return decryptedContent
+	}
+	// Return the decrypted file
+	return decryptedContent
+}
+
 func NAT(addr string) string {
 	/*
 	* NAT: ip is internal ip, need to be changed to external ip
