@@ -93,7 +93,7 @@ func NewNode(args Arguments) *Node {
 	newNode.Identifier.Mod(newNode.Identifier, hashMod)
 
 	newNode.FingerTable = make([]fingerItem, fingerTableLen+1)
-	//todo:not sure about the initial value
+
 	newNode.nextFinger = 0
 
 	newNode.PredecessorAddr = ""
@@ -110,13 +110,14 @@ func NewNode(args Arguments) *Node {
 	newNode.Backup = make(map[*big.Int]string)
 
 	rootPath := "../files/" + newNode.Name
+	//if the file did not exist
 	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
 		err := os.MkdirAll(rootPath, os.ModePerm)
 		if err != nil {
-			log.Println("failed to create file: " + rootPath + err.Error())
+			log.Println("failed to create folder: " + rootPath + err.Error())
 		} else {
 
-			fileMode := []string{"/upload", "/download", "/chord"}
+			fileMode := []string{"/upload", "/chord_storage"}
 			for _, mode := range fileMode {
 				//create upload/download/chord folder for a certain node
 				if _, err := os.Stat(rootPath + mode); os.IsNotExist(err) {
@@ -133,9 +134,8 @@ func NewNode(args Arguments) *Node {
 		newNode.genRSAKey(2048)
 	} else {
 		fmt.Println("the node folder of" + rootPath + " already exist")
-		//todo:file operations
+		//todo:how could the node file exist
 	}
-
 	return newNode
 }
 
@@ -150,7 +150,6 @@ func (node *Node) initFingerTable() {
 		identifier := new(big.Int).Add(node.Identifier, new(big.Int).Exp(big.NewInt(2), big.NewInt(int64(i)-1), nil))
 		identifier.Mod(identifier, hashMod)
 		node.FingerTable[i].Identifier = identifier.Bytes()
-		//todo: what is the address here exactly
 		node.FingerTable[i].Addr = node.Addr
 	}
 }
