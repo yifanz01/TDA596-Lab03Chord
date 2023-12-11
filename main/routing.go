@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"errors"
 	"fmt"
 	"io"
@@ -189,6 +191,15 @@ func (node *Node) LookupFingerTable(id *big.Int) string {
 	return node.SuccessorsAddr[0]
 }
 
+type GetPublicKeyRPCReply struct {
+	Public_Key *rsa.PublicKey
+}
+
+func (node *Node) GetPublicKeyRPC(none string, reply *GetPublicKeyRPCReply) error {
+	reply.Public_Key = node.PublicKey
+	return nil
+}
+
 type FileStructure struct {
 	Id      *big.Int
 	Name    string // file name e.g. "../files/" + node.Name + "/upload/"
@@ -223,8 +234,12 @@ func StoreFile(fileName string, node *Node) error {
 	// Todo 3 first node no predecessor error
 	// Todo 4 why keep logging RPC dial time out / optimise updating finger table
 	// Todo 5 check predecessor failed
+
+	var getPublicKeyRPCReply GetPublicKeyRPCReply
+	err = ChordCall(addr, "GetPublicKeyRPC", "", &getPublicKeyRPCReply)
+
 	if node.EncryptFlag {
-		newFile.Content = node.EncryptFile(newFile.Content)
+		newFile.Content, _ = rsa.EncryptPKCS1v15(rand.Reader, getPublicKeyRPCReply.Public_Key, newFile.Content)
 	}
 
 	// send storefile rpc
@@ -366,6 +381,6 @@ func (node *Node) successorStoreFile(f FileStructure) bool {
 		log.Println("[successorStoreFile] File write error: ", err)
 		return false
 	}
-	log.Printf("[successorStoreFile] File:%s store success!\n", f.Name)
+	//log.Printf("[successorStoreFile] File:%s store success!\n", f.Name)
 	return true
 }

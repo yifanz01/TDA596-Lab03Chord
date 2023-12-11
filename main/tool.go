@@ -202,7 +202,7 @@ func (node *Node) genRSAKey(bits int) {
 	}
 }
 
-// Encrypt file
+// EncryptFile Encrypt file
 func (node *Node) EncryptFile(content []byte) []byte {
 	publicKey := node.PublicKey
 	encryptedContent, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey, content)
