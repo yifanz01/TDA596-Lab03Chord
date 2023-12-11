@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
 	"io"
 	"log"
@@ -102,7 +104,15 @@ func (node *Node) stabilize() error {
 			log.Println("Read node's bucket file error: ", err)
 			return err
 		}
+		//encrypt the file
 		newFile.Content = content
+		//encrypt the content
+		var getPublicKeyRPCReply GetPublicKeyRPCReply
+		err = ChordCall(node.SuccessorsAddr[0], "Node.GetPublicKeyRPC", "", &getPublicKeyRPCReply)
+		if node.EncryptFlag {
+			newFile.Content, _ = rsa.EncryptPKCS1v15(rand.Reader, getPublicKeyRPCReply.Public_Key, newFile.Content)
+		}
+
 		successorStoreFileReply := SuccessorStoreFileRPCReply{}
 		err = ChordCall(node.SuccessorsAddr[0], "Node.SuccessorStoreFileRPC", newFile, &successorStoreFileReply)
 		if successorStoreFileReply.Error != nil || err != nil {
