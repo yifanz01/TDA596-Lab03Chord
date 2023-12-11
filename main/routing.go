@@ -382,3 +382,44 @@ func (node *Node) successorStoreFile(f FileStructure) bool {
 	//log.Printf("[successorStoreFile] File:%s store success!\n", f.Name)
 	return true
 }
+
+func (node *Node) moveFiles(addr string) {
+	var getIdReply GetIDRPCReply
+	err := ChordCall(addr, "Node.GetIDRPC", "", &getIdReply)
+	if err != nil {
+		log.Println("Failed to get the id:", err)
+	}
+	addrId := getIdReply.Identifier
+	addrId.Mod(addrId, hashMod)
+
+	// iterate local bucket
+	for k, v := range node.Bucket {
+		fileId := k
+		fileName := v
+		filePath := "../files/" + "N" + node.Identifier.String() + "/chord_storage/" + fileName
+		file, err := os.Create(filePath)
+		if err != nil {
+			log.Println("[moveFiles] File cannot be open: ", err)
+			return
+		}
+		defer file.Close()
+		newFile := FileStructure{}
+		newFile.Name = fileName
+		newFile.Id = fileId
+		newFile.Content, err = io.ReadAll(file)
+		if err != nil {
+			log.Println("[moveFiles] File cannot be read: ", err)
+			return
+		}
+		if between(fileId, addrId, node.Identifier, true) {
+			var moveFileReply StoreFileRPCReply
+			moveFileReply.Backup = false
+			err = ChordCall(addr, "Node.StoreFileRPC", newFile, &moveFileReply)
+			if err != nil {
+				log.Println("[moveFiles] Move file error: ", err)
+			}
+			// delete local file
+			delete(node.Bucket, k)
+		}
+	}
+}
