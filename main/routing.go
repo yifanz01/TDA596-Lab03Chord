@@ -297,6 +297,11 @@ func (node *Node) storeFile(f FileStructure, backUp bool) bool {
 	}
 	defer file.Close()
 
+	//before writing to the bucket, decrypt the file
+	f.Content, err = rsa.DecryptPKCS1v15(rand.Reader, node.PrivateKey, f.Content)
+	if err != nil {
+		log.Println("Failed to decrypt the file ", err)
+	}
 	_, err = file.Write(f.Content)
 	if err != nil {
 		log.Println("Write file error: ", err)
