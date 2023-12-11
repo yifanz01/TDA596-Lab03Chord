@@ -130,7 +130,9 @@ func main() {
 							log.Println("Chord Call failed! ")
 							continue
 						} else {
-							log.Println("The file is stored at: ", targetAddr)
+							id := StrHash(targetAddr)
+							id.Mod(id, hashMod)
+							log.Printf("The file is stored at node: %d ,address:port is :%s\n", id, targetAddr)
 						}
 					} else {
 						log.Println("The file is not stored at this node: ", targetAddr)
