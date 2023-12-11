@@ -236,7 +236,7 @@ func StoreFile(fileName string, node *Node) error {
 	// Todo 5 check predecessor failed
 
 	var getPublicKeyRPCReply GetPublicKeyRPCReply
-	err = ChordCall(addr, "GetPublicKeyRPC", "", &getPublicKeyRPCReply)
+	err = ChordCall(addr, "Node.GetPublicKeyRPC", "", &getPublicKeyRPCReply)
 
 	if node.EncryptFlag {
 		newFile.Content, _ = rsa.EncryptPKCS1v15(rand.Reader, getPublicKeyRPCReply.Public_Key, newFile.Content)
