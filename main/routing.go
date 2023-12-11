@@ -296,9 +296,16 @@ func (node *Node) storeFile(f FileStructure, backUp bool) bool {
 		return false
 	}
 	defer file.Close()
+	fmt.Println("---------------------------------------------------before encrypt")
+	fmt.Println(f.Content)
 
 	//before writing, decrypt the file
-	f.Content, err = rsa.DecryptPKCS1v15(rand.Reader, node.PrivateKey, f.Content)
+	if node.EncryptFlag {
+		f.Content, err = rsa.DecryptPKCS1v15(rand.Reader, node.PrivateKey, f.Content)
+	}
+
+	fmt.Println("---------------------------------------------------after encrypt")
+	fmt.Println(f.Content)
 
 	if err != nil {
 		log.Println("Failed to decrypt the file ", err)
