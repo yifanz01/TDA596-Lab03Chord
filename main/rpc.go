@@ -25,6 +25,7 @@ func ChordCall(targetNodeAddr string, serviceMethod string, args interface{}, re
 		return err
 	}
 	defer conn.Close()
+	// serviceMethod's error will pass to err
 	err = conn.Call(serviceMethod, args, reply)
 	if err != nil {
 		log.Println("Call error: ", err)

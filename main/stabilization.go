@@ -146,7 +146,7 @@ func (node *Node) cleanRedundantFile() {
 
 		if !inBackup && !inBucket {
 			// The file is not in backup and bucket, delete it
-			path := filePath + fileName
+			path := filePath + "/" + fileName
 			err = os.Remove(path)
 			if err != nil {
 				log.Printf("[cleanRedundantFile] Cannot remove the file[%s]: ", path)
@@ -182,6 +182,29 @@ func (node *Node) FixFingers() error {
 
 	node.FingerTable[node.nextFinger].Addr = next
 	node.FingerTable[node.nextFinger].Identifier = key.Bytes()
+
+	// optimization,
+	//for {
+	//	node.nextFinger += 1
+	//	if node.nextFinger > m {
+	//		node.nextFinger = 0
+	//	}
+	//	key = new(big.Int).Add(node.Identifier, new(big.Int).Exp(big.NewInt(2), big.NewInt(int64(node.nextFinger)-1), nil))
+	//	key.Mod(key, hashMod)
+	//
+	//	next = Lookup(key, node.Addr)
+	//	successorId := StrHash(next)
+	//	successorId.Mod(successorId, hashMod)
+	//	if between(node.Identifier, key, successorId, false) {
+	//		if node.FingerTable[node.nextFinger].Addr != next {
+	//			node.FingerTable[node.nextFinger].Addr = next
+	//			node.FingerTable[node.nextFinger].Identifier = key.Bytes()
+	//		}
+	//	} else {
+	//		node.nextFinger -= 1
+	//		return nil
+	//	}
+	//}
 	return nil
 }
 
@@ -192,7 +215,7 @@ func (node *Node) checkPredecessor() error {
 		ip := strings.Split(pred, ":")[0]
 		port := strings.Split(pred, ":")[1]
 
-		ip = NAT(ip)
+		// ip = NAT(ip)
 
 		predAddr := ip + ":" + port
 		_, err := jsonrpc.Dial("tcp", predAddr)

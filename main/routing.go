@@ -43,14 +43,14 @@ func (node *Node) notify(addr string) (bool, error) {
 
 		if between(predecessorID, addrID, node.Identifier, false) {
 			node.PredecessorAddr = addr
-			log.Println(node.Name, "'s Predecessor is set to ", addr)
+			// log.Println(node.Name, "'s Predecessor is set to ", addr)
 			return true, nil
 		} else {
 			return false, nil
 		}
 	} else {
 		node.PredecessorAddr = addr
-		log.Println(node.Name, "'s Predecessor is set to ", addr)
+		// log.Println(node.Name, "'s Predecessor is set to ", addr)
 		return true, nil
 	}
 }

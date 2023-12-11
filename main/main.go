@@ -42,6 +42,7 @@ func main() {
 		log.Println("[main] Arguments are invalid!")
 		os.Exit(1)
 	} else {
+		log.Println("[main] Arguments are valid!")
 		node := NewNode(arguments)
 
 		IpAddress := fmt.Sprintf("%s:%d", arguments.IpAddress, arguments.Port)
@@ -106,7 +107,7 @@ func main() {
 			log.Println("Please enter your command(Lookup/StoreFile/PrintState/Quit)...")
 			command, _ := reader.ReadString('\n')
 			command = strings.ToUpper(strings.TrimSpace(command))
-			if command == "Lookup" {
+			if command == "LOOKUP" {
 				log.Println("Please enter the file you want to look up...")
 				fileName, _ := reader.ReadString('\n')
 				fileName = strings.TrimSpace(fileName)
@@ -117,14 +118,14 @@ func main() {
 
 				// check if the file exists in targetAddr
 				checkFileExistRPCReply := CheckFileExistRPCReply{}
-				err = ChordCall(targetAddr, "Node.CheckFileExistRPC", key, &checkFileExistRPCReply)
+				err = ChordCall(targetAddr, "Node.CheckFileExistRPC", fileName, &checkFileExistRPCReply)
 				if err != nil {
 					log.Println("Check file exist fail..", err)
 					continue
 				} else {
 					if checkFileExistRPCReply.Exist {
 						var getAddrRPCReply GetAddrRPCReply
-						err = ChordCall(targetAddr, "Node.GetAddrRPC", "", getAddrRPCReply)
+						err = ChordCall(targetAddr, "Node.GetAddrRPC", "", &getAddrRPCReply)
 						if err != nil {
 							log.Println("Chord Call failed! ")
 							continue
