@@ -233,9 +233,9 @@ func StoreFile(fileName string, node *Node) error {
 	newFile.Id.Mod(newFile.Id, hashMod)
 	newFile.Content = content
 
+	//encrypt the file
 	var getPublicKeyRPCReply GetPublicKeyRPCReply
 	err = ChordCall(addr, "Node.GetPublicKeyRPC", "", &getPublicKeyRPCReply)
-
 	if node.EncryptFlag {
 		newFile.Content, _ = rsa.EncryptPKCS1v15(rand.Reader, getPublicKeyRPCReply.Public_Key, newFile.Content)
 	}
@@ -297,8 +297,9 @@ func (node *Node) storeFile(f FileStructure, backUp bool) bool {
 	}
 	defer file.Close()
 
-	//before writing to the bucket, decrypt the file
+	//before writing, decrypt the file
 	f.Content, err = rsa.DecryptPKCS1v15(rand.Reader, node.PrivateKey, f.Content)
+
 	if err != nil {
 		log.Println("Failed to decrypt the file ", err)
 	}
@@ -412,6 +413,14 @@ func (node *Node) moveFiles(addr string) {
 		newFile.Name = fileName
 		newFile.Id = fileId
 		newFile.Content, err = io.ReadAll(file)
+
+		//encrypt the file
+		var getPublicKeyRPCReply GetPublicKeyRPCReply
+		err = ChordCall(addr, "Node.GetPublicKeyRPC", "", &getPublicKeyRPCReply)
+		if node.EncryptFlag {
+			newFile.Content, _ = rsa.EncryptPKCS1v15(rand.Reader, getPublicKeyRPCReply.Public_Key, newFile.Content)
+		}
+
 		if err != nil {
 			log.Println("[moveFiles] File cannot be read: ", err)
 			return
