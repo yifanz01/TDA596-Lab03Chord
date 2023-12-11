@@ -279,7 +279,7 @@ func getIP() string {
 	}
 
 	var ip IP
-	fmt.Println("body: ", string(body))
+	//fmt.Println("body: ", string(body))
 	json.Unmarshal(body, &ip)
 
 	return ip.Query

@@ -22,10 +22,9 @@ var m = 6
 var hashMod = new(big.Int).Exp(big.NewInt(2), big.NewInt(int64(m)), nil) //2^6 = 64
 
 type fingerItem struct {
-	//todo: why bytes
 	Identifier []byte //hash id, which is m-length, m=6 in this case
 	//Identifier should be mapped into [0,(2^m-1)], on the chord with 2^m nodes in total
-	//todo:IP address?
+
 	Addr string //address of node
 }
 
@@ -134,7 +133,6 @@ func NewNode(args Arguments) *Node {
 		newNode.genRSAKey(2048)
 	} else {
 		fmt.Println("the node folder of" + rootPath + " already exist")
-		//todo:how could the node file exist
 	}
 	return newNode
 }
@@ -199,7 +197,6 @@ func (node *Node) PrintState() {
 		id := new(big.Int).SetBytes(item.Identifier)
 		address := item.Addr
 		fmt.Println("Finger ", i, " id: ", id, ", address: ", address)
-		//todo:print bucket and backup
 
 	}
 	fmt.Println("Node bucket: ", node.Bucket)

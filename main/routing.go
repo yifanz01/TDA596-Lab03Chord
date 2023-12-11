@@ -59,6 +59,10 @@ func (node *Node) notify(addr string) (bool, error) {
 
 func (node *Node) NotifyRPC(addr string, reply *NotifyRPCReply) error {
 	//todo:move files
+	if node.SuccessorsAddr[0] != node.Addr {
+		node.moveFiles(addr)
+	}
+
 	reply.Success, _ = node.notify(addr)
 	return nil
 }
@@ -228,12 +232,6 @@ func StoreFile(fileName string, node *Node) error {
 	newFile.Id = key
 	newFile.Id.Mod(newFile.Id, hashMod)
 	newFile.Content = content
-
-	// Todo 1 encrypt file content
-	// Todo 2 store success print twice
-	// Todo 3 first node no predecessor error
-	// Todo 4 why keep logging RPC dial time out / optimise updating finger table
-	// Todo 5 check predecessor failed
 
 	var getPublicKeyRPCReply GetPublicKeyRPCReply
 	err = ChordCall(addr, "Node.GetPublicKeyRPC", "", &getPublicKeyRPCReply)
