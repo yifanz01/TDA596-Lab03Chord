@@ -223,6 +223,9 @@ func StoreFile(fileName string, node *Node) error {
 	// Todo 3 first node no predecessor error
 	// Todo 4 why keep logging RPC dial time out / optimise updating finger table
 	// Todo 5 check predecessor failed
+	if node.EncryptFlag {
+		newFile.Content = node.EncryptFile(newFile.Content)
+	}
 
 	// send storefile rpc
 	reply := StoreFileRPCReply{}
