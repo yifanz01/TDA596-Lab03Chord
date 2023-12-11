@@ -202,4 +202,6 @@ func (node *Node) PrintState() {
 		//todo:print bucket and backup
 
 	}
+	fmt.Println("Node bucket: ", node.Bucket)
+	fmt.Println("Node Backup: ", node.Backup)
 }
