@@ -410,7 +410,7 @@ func (node *Node) moveFiles(addr string) {
 		fileId := k
 		fileName := v
 		filePath := "../files/" + "N" + node.Identifier.String() + "/chord_storage/" + fileName
-		file, err := os.Create(filePath)
+		file, err := os.Open(filePath)
 		if err != nil {
 			log.Println("[moveFiles] File cannot be open: ", err)
 			return
