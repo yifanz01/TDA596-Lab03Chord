@@ -20,7 +20,7 @@ Chord's structured approach makes it suitable for various applications, includin
 - Peer-to-peer networks requiring reliable and fast data retrieval
 
 ## Usage
-(Here you can add instructions or examples on how to run your implementation.)
+Clone the repo and run the main.go.
 
 ## References
 - [Original Chord Paper](https://pdos.csail.mit.edu/papers/chord:sigcomm01/chord_sigcomm.pdf)
